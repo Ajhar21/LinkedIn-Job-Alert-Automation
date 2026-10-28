@@ -1,0 +1,753 @@
+{
+  "name": "LinkedIn Job Alert Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "linkedin-job-alert",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "fad987cc-8498-49c4-84e3-133525230df7",
+      "name": "Webhook - Job Alert Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1776,
+        256
+      ],
+      "webhookId": "linkedin-job-alert"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "jobTitle",
+              "value": "={{ $json.body.jobTitle }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "location",
+              "value": "={{ $json.body.location || 'Remote' }}",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "limit",
+              "value": "={{ $json.body.limit || 20 }}",
+              "type": "number"
+            },
+            {
+              "id": "a4",
+              "name": "attempt",
+              "value": 0,
+              "type": "number"
+            },
+            {
+              "id": "a5",
+              "name": "maxAttempts",
+              "value": 20,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1b8c4ca5-9406-419f-a88a-7d621c343338",
+      "name": "Set Input Defaults",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1552,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.apify.com/v2/actors/worldunboxer~rapid-linkedin-scraper/runs",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"easy_apply\": false,\n    \"job_title\": \"{{ $json.jobTitle }}\",\n    \"jobs_entries\": {{ $json.limit }},\n    \"location\": \"{{ $json.location }}\"\n}",
+        "options": {}
+      },
+      "id": "bd63ac76-2bcb-4490-ac1e-b2917ea58e26",
+      "name": "Apify - Start Actor Run",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1328,
+        256
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "GnQhoyu92OJrfZrO",
+          "name": "Query Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "runId",
+              "value": "={{ $json.data.id }}",
+              "type": "string"
+            },
+            {
+              "id": "b2",
+              "name": "datasetId",
+              "value": "={{ $json.data.defaultDatasetId }}",
+              "type": "string"
+            },
+            {
+              "id": "b3",
+              "name": "attempt",
+              "value": "={{ $('Set Input Defaults').item.json.attempt }}",
+              "type": "number"
+            },
+            {
+              "id": "b4",
+              "name": "maxAttempts",
+              "value": "={{ $('Set Input Defaults').item.json.maxAttempts }}",
+              "type": "number"
+            },
+            {
+              "id": "b5",
+              "name": "jobTitle",
+              "value": "={{ $('Set Input Defaults').item.json.jobTitle }}",
+              "type": "string"
+            },
+            {
+              "id": "b6",
+              "name": "location",
+              "value": "={{ $('Set Input Defaults').item.json.location }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e8e3e737-30a0-497d-b1ff-eed74621ff89",
+      "name": "Extract Run Info",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1104,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 15
+      },
+      "id": "312cb6b5-0e47-421b-8854-5f14c766b1a2",
+      "name": "Wait Before Check",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -880,
+        256
+      ],
+      "webhookId": "4efcdc2f-0f1b-402b-9227-ba6431e88b98"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.apify.com/v2/actor-runs/{{ $('Extract Run Info').item.json.runId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "options": {}
+      },
+      "id": "a40c8f69-b92d-4579-9c33-57ab5fb65fe3",
+      "name": "Apify - Check Run Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -656,
+        176
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "GnQhoyu92OJrfZrO",
+          "name": "Query Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.data.status }}",
+              "value2": "SUCCEEDED"
+            }
+          ]
+        }
+      },
+      "id": "e78a76b7-72a1-4e22-9969-7c63509e541d",
+      "name": "IF - Run Succeeded",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ ['FAILED','ABORTED','TIMED-OUT'].includes($json.data.status) ? 'yes' : 'no' }}",
+              "value2": "yes"
+            }
+          ]
+        }
+      },
+      "id": "f18f77f2-69d2-4acd-a1ef-2aa1d028ba78",
+      "name": "IF - Run Failed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $('Extract Run Info').item.json.attempt }}",
+              "operation": "largerEqual",
+              "value2": "={{ $('Extract Run Info').item.json.maxAttempts }}"
+            }
+          ]
+        }
+      },
+      "id": "11c06afb-bdb1-4f1a-beb7-bd7daa316311",
+      "name": "IF - Max Attempts Reached",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        16,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "attempt",
+              "value": "={{ $('Extract Run Info').item.json.attempt + 1 }}",
+              "type": "number"
+            },
+            {
+              "id": "c2",
+              "name": "maxAttempts",
+              "value": "={{ $('Extract Run Info').item.json.maxAttempts }}",
+              "type": "number"
+            },
+            {
+              "id": "c3",
+              "name": "runId",
+              "value": "={{ $('Extract Run Info').item.json.runId }}",
+              "type": "string"
+            },
+            {
+              "id": "c4",
+              "name": "datasetId",
+              "value": "={{ $('Extract Run Info').item.json.datasetId }}",
+              "type": "string"
+            },
+            {
+              "id": "c5",
+              "name": "jobTitle",
+              "value": "={{ $('Extract Run Info').item.json.jobTitle }}",
+              "type": "string"
+            },
+            {
+              "id": "c6",
+              "name": "location",
+              "value": "={{ $('Extract Run Info').item.json.location }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e0e4b52e-093f-4040-a8b1-2554b0f1f82d",
+      "name": "Increment Attempt",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"status\": \"failed\", \"message\": \"Apify actor run failed or was aborted.\", \"apifyStatus\": $json.data.status } }}",
+        "options": {
+          "responseCode": 502
+        }
+      },
+      "id": "c4d9aa0f-72da-4612-908d-80ecaa4e272d",
+      "name": "Respond - Run Failed",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        16,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"status\": \"timeout\", \"message\": \"Scraping job did not finish within the allotted polling attempts.\" } }}",
+        "options": {
+          "responseCode": 504
+        }
+      },
+      "id": "d58e959d-245d-43a5-a4e1-3e1f2c861210",
+      "name": "Respond - Timeout",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.apify.com/v2/datasets/{{ $('Extract Run Info').item.json.datasetId }}/items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "options": {}
+      },
+      "id": "a15f90ec-65d4-4c95-9131-198b0c010f68",
+      "name": "Apify - Get Dataset Items",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -208,
+        80
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "GnQhoyu92OJrfZrO",
+          "name": "Query Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all jobs from the previous node\nconst jobs = $input.all();\n\n// Transform each job into the desired format\nreturn jobs.map(item => {\n  const job = item.json;\n\n  return {\n    json: {\n      \"Job Title\": job.job_title || \"\",\n      \"Company Name\": job.company_name || \"\",\n      \"Location\": job.location || \"\",\n      \"Posted Time\": job.time_posted || \"\",\n      \"Job URL\": job.apply_url || job.job_url || \"\",\n      \"Company URL\": job.company_url || \"\"\n    }\n  };\n});"
+      },
+      "id": "d5e748d2-e94a-4345-8160-f7a8e693d5be",
+      "name": "Process Job Listings",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Job Lists",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Job Title": "={{ $json['Job Title'] }}",
+            "Company Name": "={{ $json['Company Name'] }}",
+            "Posted Time": "={{ $json['Posted Time'] }}",
+            "Job URL": "={{ $json['Job URL'] }}",
+            "Company URL": "={{ $json['Company URL'] }}",
+            "Location": "={{ $json.Location }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Job Title",
+              "displayName": "Job Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Posted Time",
+              "displayName": "Posted Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Job URL",
+              "displayName": "Job URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company URL",
+              "displayName": "Company URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "f2140d16-25ca-4aa5-85e3-018f7f3d10a3",
+      "name": "Google Sheets - Append Jobs",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        240,
+        80
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Fp1MQtv0M4QmwCBm",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const jobs = $input.all();\n\nconst companyCount = {};\nconst locationCount = {};\n\nfor (const item of jobs) {\n\n  const company = item.json[\"Company Name\"] || \"Unknown\";\n  const location = item.json[\"Location\"] || \"Unknown\";\n\n  companyCount[company] = (companyCount[company] || 0) + 1;\n  locationCount[location] = (locationCount[location] || 0) + 1;\n}\n\nfunction topItems(obj, limit = 5) {\n  return Object.entries(obj)\n    .sort((a, b) => b[1] - a[1])\n    .slice(0, limit)\n    .map(([name, count]) => ({\n      name,\n      count\n    }));\n}\n\nreturn [\n  {\n    json: {\n      totalJobs: jobs.length,\n      topCompanies: topItems(companyCount, 5),\n      topLocations: topItems(locationCount, 5)\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        80
+      ],
+      "id": "8277c483-851e-4c52-8a10-4dcd93906fbf",
+      "name": "Analyze Hiring Trends"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a recruitment analyst.\n\nBased on the following hiring statistics, write a professional summary in 2-3 sentences.\nat first, mention the name of the job search keyword: {{ $('Set Input Defaults').item.json.jobTitle }}\nMention for how many job limit set by user: {{ $('Set Input Defaults').item.json.limit }}\nThen start the summary. \n\nTotal Jobs:\n{{ $json.totalJobs }}\n\nTop Hiring Companies:\n{{ JSON.stringify($json.topCompanies) }}\n\nTop Locations:\n{{ JSON.stringify($json.topLocations) }}\n\nYour summary should mention:\n\n• the most common hiring companies\n• the most common hiring locations\n• any noticeable hiring trend\n\nDo not use bullet points.\n\nKeep the response under 70 words.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        688,
+        80
+      ],
+      "id": "1b5300c5-f29a-454c-ad2e-c3c034d1e458",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        768,
+        304
+      ],
+      "id": "d7a6d233-d596-4916-81ff-6535e46d7ad6",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "GT7qJ129HFZT7DSU",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1040,
+        80
+      ],
+      "id": "1419f666-553a-4f7e-b860-760935e78068",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook - Job Alert Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Input Defaults",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Input Defaults": {
+      "main": [
+        [
+          {
+            "node": "Apify - Start Actor Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify - Start Actor Run": {
+      "main": [
+        [
+          {
+            "node": "Extract Run Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Run Info": {
+      "main": [
+        [
+          {
+            "node": "Wait Before Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Before Check": {
+      "main": [
+        [
+          {
+            "node": "Apify - Check Run Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify - Check Run Status": {
+      "main": [
+        [
+          {
+            "node": "IF - Run Succeeded",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Run Succeeded": {
+      "main": [
+        [
+          {
+            "node": "Apify - Get Dataset Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF - Run Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Run Failed": {
+      "main": [
+        [
+          {
+            "node": "Respond - Run Failed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF - Max Attempts Reached",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Max Attempts Reached": {
+      "main": [
+        [
+          {
+            "node": "Respond - Timeout",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Increment Attempt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Increment Attempt": {
+      "main": [
+        [
+          {
+            "node": "Wait Before Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify - Get Dataset Items": {
+      "main": [
+        [
+          {
+            "node": "Process Job Listings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Job Listings": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Append Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets - Append Jobs": {
+      "main": [
+        [
+          {
+            "node": "Analyze Hiring Trends",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Hiring Trends": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "49fbce95-dc08-456d-9e1e-9e4c64dad6d3",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "id": "",
+  "tags": []
+}

@@ -1,0 +1,6 @@
+Job search: Python Developer
+
+Hiring activity for Python Developer roles is concentrated in Dhaka, Bangladesh,
+with companies such as Bdjobs.com, nextjobz, and ZTE Corporation posting multiple
+openings. Automation and ETL-focused positions (Python, SQL) appear frequently,
+suggesting steady demand for backend and data-integration skills in the local market.
